@@ -9,19 +9,87 @@ $FicheTechniqueDir = Join-Path $ScriptDir "Fiche technique"
 $ExtractEanScript = Join-Path $ScriptDir "extract_ean.py"
 $RenameFilesScript = Join-Path $ScriptDir "rename_files.py"
 $ExtractImagesScript = Join-Path $ScriptDir "extract_images.py"
+$RequirementsFile = Join-Path $ScriptDir "requirements.txt"
+
+# --- Vérification de Python et des dépendances ---
+function CheckPythonDependencies {
+    # Vérifier si Python est installé
+    $pythonInstalled = $false
+    try {
+        $pythonVersion = python --version 2>&1
+        if ($pythonVersion -like "*Python 3*") {
+            Write-Host "Python est installé: $pythonVersion" -ForegroundColor Green
+            $pythonInstalled = $true
+        } else {
+            Write-Host "Python 3 n'est pas détecté" -ForegroundColor Yellow
+        }
+    } catch {
+        Write-Host "Python n'est pas installé ou n'est pas dans le PATH" -ForegroundColor Red
+    }
+
+    if (-not $pythonInstalled) {
+        Write-Host "Veuillez installer Python 3 depuis https://www.python.org/downloads/" -ForegroundColor Red
+        Read-Host "Appuyez sur Entree pour quitter"
+        exit
+    }
+
+    # Vérifier si pip est installé
+    $pipInstalled = $false
+    try {
+        $pipVersion = python -m pip --version 2>&1
+        Write-Host "Pip est installé: $pipVersion" -ForegroundColor Green
+        $pipInstalled = $true
+    } catch {
+        Write-Host "Pip n'est pas installé correctement" -ForegroundColor Red
+    }
+
+    if (-not $pipInstalled) {
+        Write-Host "Installation de pip..." -ForegroundColor Yellow
+        try {
+            Invoke-Expression "python -m ensurepip --upgrade"
+            Write-Host "Pip a été installé" -ForegroundColor Green
+        } catch {
+            Write-Host "Échec de l'installation de pip. Veuillez l'installer manuellement." -ForegroundColor Red
+            Read-Host "Appuyez sur Entree pour quitter"
+            exit
+        }
+    }
+
+    # Installer les dépendances requises
+    if (Test-Path $RequirementsFile) {
+        Write-Host "Installation des dépendances Python nécessaires..." -ForegroundColor Yellow
+        try {
+            Invoke-Expression "python -m pip install -r `"$RequirementsFile`""
+            Write-Host "Toutes les dépendances ont été installées avec succès" -ForegroundColor Green
+        } catch {
+            Write-Host "Erreur lors de l'installation des dépendances" -ForegroundColor Red
+            Write-Host $_.Exception.Message
+            $installManually = Read-Host "Voulez-vous continuer sans les dépendances? (O/N)"
+            if ($installManually -ne "O") {
+                exit
+            }
+        }
+    } else {
+        Write-Host "Fichier requirements.txt non trouvé dans $RequirementsFile" -ForegroundColor Red
+    }
+}
 
 # --- Check for required files and directories ---
 if (-not (Test-Path $BaseProduitsFile)) {
     Write-Host "Erreur : Le fichier '$BaseProduitsFile' est manquant." -ForegroundColor Red
-    Read-Host "Appuyez sur Entrée pour quitter."
+    Read-Host "Appuyez sur Entree pour quitter."
     exit
 }
 
 if (-not (Test-Path $FicheTechniqueDir -PathType Container)) {
     Write-Host "Erreur : Le dossier '$FicheTechniqueDir' est manquant." -ForegroundColor Red
-    Read-Host "Appuyez sur Entrée pour quitter."
+    Read-Host "Appuyez sur Entree pour quitter."
     exit
 }
+
+# --- Vérifier l'installation de Python et des dépendances ---
+Write-Host "Vérification de Python et des dépendances requises..." -ForegroundColor Cyan
+CheckPythonDependencies
 
 # --- Main Menu Loop ---
 while ($true) {
