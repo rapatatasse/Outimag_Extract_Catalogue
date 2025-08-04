@@ -6,10 +6,13 @@ import csv
 def extract_ean_from_pdf(pdf_path):
     """Extracts all 13-digit numbers (EAN codes) from a PDF file.
     Also checks for specific text "www.lma-lebeurre.com" if no EAN codes found.
-    For LMA files, extracts the product code after "WORKWEAR 1880"."""
+    For LMA files, extracts the product code after "WORKWEAR 1880".
+    For AUTOBEST files, extracts the reference at the beginning of the text before "AUTOBEST"."""
     ean_codes = []
     contains_lma = False
+    contains_autobest = False
     lma_product_code = None
+    autobest_code = None
     full_text = ""
     fournisseur = ""
     
@@ -28,7 +31,11 @@ def extract_ean_from_pdf(pdf_path):
             # Vérifier si le texte contient www.lma-lebeurre.com
             if "www.lma-lebeurre.com" in text:
                 contains_lma = True
-        
+                
+            # Vérifier si le texte contient AUTOBEST
+            if "AUTOBEST" in text:
+                contains_autobest = True
+                       
         # Si c'est un fichier LMA, chercher le code produit après "WORKWEAR 1880"
         if contains_lma:
             # Rechercher le motif "WORKWEAR 1880" suivi d'un nombre à 4+ chiffres
@@ -36,6 +43,22 @@ def extract_ean_from_pdf(pdf_path):
             if match:
                 lma_product_code = match.group(1)
                 print(f"Code LMA trouvé: {lma_product_code}")
+        
+        # Si c'est un fichier AUTOBEST, extraire la référence après "Aperçu du texte:"
+        if contains_autobest:
+                       # Rechercher le motif "Aperçu du texte:" suivi de chiffres
+            # Afficher le texte autour de "Aperçu du texte:" pour débogage
+            apercu_index = full_text.find("AUTOBEST - BP 67")
+            if apercu_index != -1:
+                debug_text = full_text[apercu_index:apercu_index+100]
+               
+                # Extraire les chiffres après "AUTOBEST - BP 67"
+                match = re.search(r'\s*(\d+)\s*AUTOBEST - BP 67', full_text)
+                if match:
+                    autobest_code = match.group(1).strip()
+                    print(f"Code AUTOBEST trouvé dans le contenu: {autobest_code}")
+                else:
+                    print("Motif 'Code AUTOBEST' non trouvé")
         
         doc.close()
     except Exception as e:
@@ -52,6 +75,11 @@ def extract_ean_from_pdf(pdf_path):
             fournisseur = "LMA"
         else:
             fournisseur = "LMA"
+    
+    # Si c'est un fichier AUTOBEST, utiliser le code AUTOBEST extrait du contenu
+    if contains_autobest and autobest_code:
+        unique_codes = [autobest_code]
+        fournisseur = "AUTOBEST"
     
     return unique_codes, fournisseur
 
@@ -73,24 +101,10 @@ def main():
         for filename in os.listdir(pdf_directory):
             if filename.lower().endswith('.pdf'):
                 ean_codes = []
-                # Check if the filename is exactly a 6-digit or 5-digit number followed by .pdf
-                match = re.match(r'^(\d{6})\.pdf$', filename, re.IGNORECASE) #exactement 6 digits
-                match2 = re.match(r'^(\d{5})\.pdf$', filename, re.IGNORECASE) #exactement 5 digits
-                
-                if match:
-                    # If a 6-digit number is found, use it as the code
-                    ean_codes = [match.group(1)]
-                    print(f"--- Found 6-digit code in filename: {filename} ---")
-                    fournisseur = "AUTOBEST"
-                elif match2:
-                    ean_codes = [match2.group(1)]
-                    print(f"--- Found 5-digit code in filename: {filename} ---")
-                    fournisseur = "AUTOBEST"
-                else:
-                    # Otherwise, search for 13-digit EANs in the PDF content
-                    print(f"--- Searching for 13-digit EANs in: {filename} ---")
-                    pdf_path = os.path.join(pdf_directory, filename)
-                    ean_codes, fournisseur = extract_ean_from_pdf(pdf_path)
+                # Analyser le contenu du PDF pour tous les fichiers
+                print(f"--- Analyzing PDF content of: {filename} ---")
+                pdf_path = os.path.join(pdf_directory, filename)
+                ean_codes, fournisseur = extract_ean_from_pdf(pdf_path)
                 
                 ean_codes_str = ';'.join(ean_codes)
                 csv_writer.writerow([filename, ean_codes_str, fournisseur])
