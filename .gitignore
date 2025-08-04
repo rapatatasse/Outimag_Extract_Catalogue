@@ -1,10 +1,12 @@
 # Ignorer le contenu des dossiers de fiches techniques mais garder les dossiers
 A Fiches techniques a traiter/*
 B Fiches techniques traitees/*
+C image extraites/*
 
 # Garder les dossiers vides avec .gitkeep
 !A Fiches techniques a traiter/.gitkeep
 !B Fiches techniques traitees/.gitkeep
+!C image extraites/.gitkeep
 
 
 # Fichiers temporaires et autres fichiers générés
