@@ -1,0 +1,15 @@
+# Ignorer les dossiers de fiches techniques
+Fiche technique a traite/
+Fiche technique traite/
+Fiche technique*/
+
+# Fichiers temporaires et autres fichiers générés
+*.csv
+*.xlsx
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Fichiers système
+.DS_Store
+Thumbs.db
