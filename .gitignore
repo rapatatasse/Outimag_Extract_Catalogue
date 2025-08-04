@@ -1,7 +1,7 @@
 # Ignorer les dossiers de fiches techniques
-Fiche technique a traite/
-Fiche technique traite/
-Fiche technique*/
+Fiche technique a traite/*
+Fiche technique traite/*
+
 
 # Fichiers temporaires et autres fichiers générés
 *.csv
