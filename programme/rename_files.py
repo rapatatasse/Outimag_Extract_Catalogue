@@ -88,149 +88,169 @@ def rename_pdfs():
         print(f"\nProcessing {len(pdf_ean_df)} files from '{ean_csv_path}'.\n")
 
         for index, row in pdf_ean_df.iterrows():
-            original_filename = row['Filename']
-            codes_str = row.get('EAN Codes', '')
-            fournisseur = row.get('Fournisseur', '')
+            try:
+                original_filename = row['Filename']
+                codes_str = row.get('EAN Codes', '')
+                fournisseur = row.get('Fournisseur', '')
 
-            if not codes_str or pd.isna(codes_str):
-                print(f"Skipping '{original_filename}': No codes found.")
-                continue
+                if not codes_str or pd.isna(codes_str):
+                    print(f"Skipping '{original_filename}': No codes found.")
+                    continue
 
-            # Process all codes in the file
-            codes = [code.strip() for code in codes_str.split(';') if code.strip()]
-            matches_found = False
-            original_path = os.path.join(pdf_directory, original_filename)
-            
-            # Skip if original file doesn't exist
-            if not os.path.exists(original_path):
-                print(f"Skipping '{original_filename}': file not found.")
-                continue
+                # Process all codes in the file
+                codes = [code.strip() for code in codes_str.split(';') if code.strip()]
+                matches_found = False
+                original_path = os.path.join(pdf_directory, original_filename)
                 
-            # Process each code
-            current_source_path = original_path  # Garde une trace du chemin source actuel
-            first_renamed_file = None  # Pour stocker le premier fichier renommé
-            successfully_renamed = False  # Flag pour vérifier si au moins un fichier a été renommé
-            
-            for code_index, code in enumerate(codes):
-                new_name_base = None
+                # Skip if original file doesn't exist
+                if not os.path.exists(original_path):
+                    print(f"Skipping '{original_filename}': file not found.")
+                    continue
+                    
+                # Process each code
+                current_source_path = original_path  # Garde une trace du chemin source actuel
+                first_renamed_file = None  # Pour stocker le premier fichier renommé
+                successfully_renamed = False  # Flag pour vérifier si au moins un fichier a été renommé
                 
-                # Determine which mapping to use based on fournisseur
-                if fournisseur == "AUTOBEST":
-                    new_name_base = autobest_to_name_map.get(code)
-                    lookup_type = "6-digit AUTOBEST code"
-                    
-                    if new_name_base:
-                        matches_found = True
-                        sanitized_name = sanitize_filename(str(new_name_base))
-                        _, extension = os.path.splitext(original_filename)
-                        new_filename = f"{sanitized_name}{extension}"
+                # S'assurer que le fichier original existe toujours
+                if not os.path.exists(original_path):
+                    print(f"Warning: Original file '{original_filename}' no longer exists. Skipping remaining codes.")
+                    continue
+                
+                for code_index, code in enumerate(codes):
+                    try:
+                        new_name_base = None
                         
-                        new_path = os.path.join(pdf_directory_traiter, new_filename)
-                        
-                        # Handle duplicate filenames by adding a counter if needed
-                        counter = 1
-                        base_path = new_path
-                        while os.path.exists(new_path):
-                            name_parts = os.path.splitext(base_path)
-                            new_path = f"{name_parts[0]}_{counter}{name_parts[1]}"
-                            counter += 1
-                        
-                        import shutil
-                        
-                        if code_index == 0:
-                            # Pour le premier code, renommer le fichier original
-                            os.rename(current_source_path, new_path)
-                            print(f"Renamed '{original_filename}' to '{os.path.basename(new_path)}'")
-                            first_renamed_file = new_path  # Sauvegarde le chemin du premier fichier renommé
-                            current_source_path = new_path  # Met à jour le chemin source actuel
-                        else:
-                            # Pour les codes suivants, copier à partir du premier fichier renommé
-                            shutil.copy2(first_renamed_file, new_path)
-                            print(f"Created copy as '{os.path.basename(new_path)}'")
-                    else:
-                        print(f"Code '{code}' from '{original_filename}': {lookup_type} not found in database.")
-                    
-                elif fournisseur == "LMA":
-                    # Pour LMA, rechercher toutes les références avec ce code de base
-                    lookup_type = "LMA base code"
-                    matching_refs = lma_code_to_refs.get(code, [])
-                    
-                    if matching_refs:
-                        matches_found = True
-                        print(f"Found {len(matching_refs)} products for LMA base code {code}")
-                        
-                        # Pour chaque référence trouvée, créer un fichier
-                        for i, ref_data in enumerate(matching_refs):
-                            _, extension = os.path.splitext(original_filename)
-                            new_filename = f"{ref_data['product_name']}{extension}"
+                        # Determine which mapping to use based on fournisseur
+                        if fournisseur == "AUTOBEST":
+                            new_name_base = autobest_to_name_map.get(code)
+                            lookup_type = "6-digit AUTOBEST code"
                             
-                            new_path = os.path.join(pdf_directory_traiter, new_filename)
-                            
-                            # Handle duplicate filenames if needed
-                            counter = 1
-                            base_path = new_path
-                            while os.path.exists(new_path):
-                                name_parts = os.path.splitext(base_path)
-                                new_path = f"{name_parts[0]}_{counter}{name_parts[1]}"
-                                counter += 1
-                            
-                            import shutil
-                            
-                            if i == 0 and code_index == 0:
-                                # Pour la première référence du premier code, renommer le fichier original
-                                os.rename(current_source_path, new_path)
-                                print(f"Renamed '{original_filename}' to '{os.path.basename(new_path)}'")
-                                first_renamed_file = new_path  # Sauvegarde le chemin du premier fichier renommé
-                                current_source_path = new_path  # Met à jour le chemin source actuel
+                            if new_name_base:
+                                matches_found = True
+                                sanitized_name = sanitize_filename(str(new_name_base))
+                                _, extension = os.path.splitext(original_filename)
+                                new_filename = f"{sanitized_name}{extension}"
+                                
+                                new_path = os.path.join(pdf_directory_traiter, new_filename)
+                                
+                                # Handle duplicate filenames by adding a counter if needed
+                                counter = 1
+                                base_path = new_path
+                                while os.path.exists(new_path):
+                                    name_parts = os.path.splitext(base_path)
+                                    new_path = f"{name_parts[0]}_{counter}{name_parts[1]}"
+                                    counter += 1
+                                
+                                if code_index == 0:
+                                    # Pour le premier code, renommer le fichier original
+                                    os.rename(current_source_path, new_path)
+                                    print(f"Renamed '{original_filename}' to '{os.path.basename(new_path)}'")
+                                    first_renamed_file = new_path  # Sauvegarde le chemin du premier fichier renommé
+                                    current_source_path = new_path  # Met à jour le chemin source actuel
+                                    successfully_renamed = True
+                                else:
+                                    # Pour les codes suivants, copier à partir du premier fichier renommé
+                                    if first_renamed_file is None:
+                                        print(f"Warning: Cannot create copy for code '{code}' as no file was successfully renamed yet.")
+                                        continue
+                                    shutil.copy2(first_renamed_file, new_path)
+                                    print(f"Created copy as '{os.path.basename(new_path)}'")
                             else:
-                                # Pour les autres références, copier à partir du fichier original/premier renommé
-                                shutil.copy2(first_renamed_file or original_path, new_path)
-                                print(f"Created copy as '{os.path.basename(new_path)}' for ref {ref_data['product_name']}")
-                    else:
-                        print(f"Code '{code}' from '{original_filename}': {lookup_type} not found in database.")
-                
-                else:
-                    # Méthode standard pour les codes EAN
-                    new_name_base = ean_to_name_map.get(code)
-                    lookup_type = "13-digit EAN"
-                    
-                    if new_name_base:
-                        matches_found = True
-                        sanitized_name = sanitize_filename(str(new_name_base))
-                        _, extension = os.path.splitext(original_filename)
-                        new_filename = f"{sanitized_name}{extension}"
+                                print(f"Code '{code}' from '{original_filename}': {lookup_type} not found in database.")
+                            
+                        elif fournisseur == "LMA":
+                            # Pour LMA, rechercher toutes les références avec ce code de base
+                            lookup_type = "LMA base code"
+                            matching_refs = lma_code_to_refs.get(code, [])
+                            
+                            if matching_refs:
+                                matches_found = True
+                                print(f"Found {len(matching_refs)} products for LMA base code {code}")
+                                
+                                # Pour chaque référence trouvée, créer un fichier
+                                for i, ref_data in enumerate(matching_refs):
+                                    _, extension = os.path.splitext(original_filename)
+                                    new_filename = f"{ref_data['product_name']}{extension}"
+                                    
+                                    new_path = os.path.join(pdf_directory_traiter, new_filename)
+                                    
+                                    # Handle duplicate filenames if needed
+                                    counter = 1
+                                    base_path = new_path
+                                    while os.path.exists(new_path):
+                                        name_parts = os.path.splitext(base_path)
+                                        new_path = f"{name_parts[0]}_{counter}{name_parts[1]}"
+                                        counter += 1
+                                    
+                                    if i == 0 and code_index == 0:
+                                        # Pour la première référence du premier code, renommer le fichier original
+                                        os.rename(current_source_path, new_path)
+                                        print(f"Renamed '{original_filename}' to '{os.path.basename(new_path)}'")
+                                        first_renamed_file = new_path  # Sauvegarde le chemin du premier fichier renommé
+                                        current_source_path = new_path  # Met à jour le chemin source actuel
+                                        successfully_renamed = True
+                                    else:
+                                        # Pour les autres références, copier à partir du fichier original/premier renommé
+                                        source_path = first_renamed_file if first_renamed_file is not None else original_path
+                                        if not os.path.exists(source_path):
+                                            print(f"Warning: Source file for copying no longer exists. Skipping.")
+                                            continue
+                                        shutil.copy2(source_path, new_path)
+                                        print(f"Created copy as '{os.path.basename(new_path)}' for ref {ref_data['product_name']}")
+                            else:
+                                print(f"Code '{code}' from '{original_filename}': {lookup_type} not found in database.")
                         
-                        new_path = os.path.join(pdf_directory_traiter, new_filename)
-                        
-                        # Handle duplicate filenames by adding a counter if needed
-                        counter = 1
-                        base_path = new_path
-                        while os.path.exists(new_path):
-                            name_parts = os.path.splitext(base_path)
-                            new_path = f"{name_parts[0]}_{counter}{name_parts[1]}"
-                            counter += 1
-                        
-                        import shutil
-                        
-                        if code_index == 0:
-                            # Pour le premier code, renommer le fichier original
-                            os.rename(current_source_path, new_path)
-                            print(f"Renamed '{original_filename}' to '{os.path.basename(new_path)}'")
-                            first_renamed_file = new_path  # Sauvegarde le chemin du premier fichier renommé
-                            current_source_path = new_path  # Met à jour le chemin source actuel
                         else:
-                            # Pour les codes suivants, copier à partir du premier fichier renommé
-                            shutil.copy2(first_renamed_file, new_path)
-                            print(f"Created copy as '{os.path.basename(new_path)}'")
-                    else:
-                        print(f"Code '{code}' from '{original_filename}': {lookup_type} not found in database.")
-                
-                # Ce bloc est géré au-dessus dans les sections spécifiques de chaque fournisseur
+                            # Méthode standard pour les codes EAN
+                            new_name_base = ean_to_name_map.get(code)
+                            lookup_type = "13-digit EAN"
+                            
+                            if new_name_base:
+                                matches_found = True
+                                sanitized_name = sanitize_filename(str(new_name_base))
+                                _, extension = os.path.splitext(original_filename)
+                                new_filename = f"{sanitized_name}{extension}"
+                                
+                                new_path = os.path.join(pdf_directory_traiter, new_filename)
+                                
+                                # Handle duplicate filenames by adding a counter if needed
+                                counter = 1
+                                base_path = new_path
+                                while os.path.exists(new_path):
+                                    name_parts = os.path.splitext(base_path)
+                                    new_path = f"{name_parts[0]}_{counter}{name_parts[1]}"
+                                    counter += 1
+                                
+                                if code_index == 0:
+                                    # Pour le premier code, renommer le fichier original
+                                    os.rename(current_source_path, new_path)
+                                    print(f"Renamed '{original_filename}' to '{os.path.basename(new_path)}'")
+                                    first_renamed_file = new_path  # Sauvegarde le chemin du premier fichier renommé
+                                    current_source_path = new_path  # Met à jour le chemin source actuel
+                                    successfully_renamed = True
+                                else:
+                                    # Pour les codes suivants, copier à partir du premier fichier renommé
+                                    if first_renamed_file is None:
+                                        print(f"Warning: Cannot create copy for code '{code}' as no file was successfully renamed yet.")
+                                        continue
+                                    shutil.copy2(first_renamed_file, new_path)
+                                    print(f"Created copy as '{os.path.basename(new_path)}'")
+                            else:
+                                print(f"Code '{code}' from '{original_filename}': {lookup_type} not found in database.")
+                    except Exception as e:
+                        print(f"Error processing code '{code}' from '{original_filename}': {e}")
+                        continue  # Continue with next code
+            except Exception as e:
+                print(f"Error processing file entry {index}: {e}")
+                continue  # Continue with next file
 
     except FileNotFoundError as e:
         print(f"Error: {e}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == "__main__":
     rename_pdfs()
