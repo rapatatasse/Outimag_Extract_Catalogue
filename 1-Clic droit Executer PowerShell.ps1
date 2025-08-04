@@ -6,10 +6,10 @@ $ScriptDir = $PSScriptRoot
 # --- Configuration ---
 $BaseProduitsFile = Join-Path $ScriptDir "FICHIER GENERAL.xlsx"
 $FicheTechniqueDir = Join-Path $ScriptDir "Fiche technique"
-$ExtractEanScript = Join-Path $ScriptDir "extract_ean.py"
-$RenameFilesScript = Join-Path $ScriptDir "rename_files.py"
-$ExtractImagesScript = Join-Path $ScriptDir "extract_images.py"
-$RequirementsFile = Join-Path $ScriptDir "requirements.txt"
+$ExtractEanScript = Join-Path $ScriptDir "programme/extract_ean.py"
+$RenameFilesScript = Join-Path $ScriptDir "programme/rename_files.py"
+$ExtractImagesScript = Join-Path $ScriptDir "programme/extract_images.py"
+$RequirementsFile = Join-Path $ScriptDir "programme/requirements.txt"
 
 # --- Vérification de Python et des dépendances ---
 function CheckPythonDependencies {

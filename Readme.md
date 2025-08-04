@@ -1,15 +1,5 @@
-Pour script extract_ean.py
-lancer le script pour installer les dépendances : 
-pip install -r requirements.txt
+Mettre a jour le fichier FICHIER GENERAL.xlsx si besoin
+lancer le fichier 1-Clic droit Executer PowerShell.ps1
+suivre les instructions
 
-si 
-Error processing file Fiche technique A250.pdf: module 'fitz' has no attribute 'open'
-pip uninstall PyMuPDF fitz -y
-
-
-
-
-faire pas a pas installer logiciel
-installer pandas en auto
-et PyMuPDF==1.24.1
 
