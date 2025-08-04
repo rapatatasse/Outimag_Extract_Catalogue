@@ -12,7 +12,7 @@ def rename_pdfs():
     ean_csv_path = './ean_codes.csv'
     product_db_path = './FICHIER GENERAL.xlsx'
     pdf_directory = './Fiche technique a traite'
-    pdf_directory_traiter = './Fiche technique traitee'
+    pdf_directory_traiter = './Fiche technique traite'
 
     # Column indices (0-based)
     product_name_col_index = 3  # Column 4 (D) for Product Name
@@ -30,6 +30,11 @@ def rename_pdfs():
     if not os.path.isdir(pdf_directory):
         print(f"Error: PDF directory '{pdf_directory}' not found.")
         return
+    
+    # Vérifier si le dossier de destination existe, sinon le créer
+    if not os.path.exists(pdf_directory_traiter):
+        os.makedirs(pdf_directory_traiter)
+        print(f"Created directory '{pdf_directory_traiter}'.")
 
     try:
         # --- Load and Prepare Product Database ---
@@ -120,7 +125,7 @@ def rename_pdfs():
                         _, extension = os.path.splitext(original_filename)
                         new_filename = f"{sanitized_name}{extension}"
                         
-                        new_path = os.path.join(pdf_directory, new_filename)
+                        new_path = os.path.join(pdf_directory_traiter, new_filename)
                         
                         # Handle duplicate filenames by adding a counter if needed
                         counter = 1
@@ -159,7 +164,7 @@ def rename_pdfs():
                             _, extension = os.path.splitext(original_filename)
                             new_filename = f"{ref_data['product_name']}{extension}"
                             
-                            new_path = os.path.join(pdf_directory, new_filename)
+                            new_path = os.path.join(pdf_directory_traiter, new_filename)
                             
                             # Handle duplicate filenames if needed
                             counter = 1
@@ -195,7 +200,7 @@ def rename_pdfs():
                         _, extension = os.path.splitext(original_filename)
                         new_filename = f"{sanitized_name}{extension}"
                         
-                        new_path = os.path.join(pdf_directory, new_filename)
+                        new_path = os.path.join(pdf_directory_traiter, new_filename)
                         
                         # Handle duplicate filenames by adding a counter if needed
                         counter = 1
