@@ -3,3 +3,11 @@ lancer le fichier 1-Clic droit Executer PowerShell.ps1
 suivre les instructions
 
 
+
+### mettre a jour le dossier###
+
+clique droit dans dossier puis "git bash here"
+
+dans le terminal taper "git pull"
+
+
