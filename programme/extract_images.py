@@ -40,7 +40,7 @@ def extract_and_convert_images(pdf_path, output_dir):
 
 def main():
     """Main function to process PDFs starting with 'R'."""
-    pdf_directory = os.path.join(os.path.dirname(__file__), './Fiche technique a traite')
+    pdf_directory = os.path.join(os.path.dirname(__file__), './A Fiches techniques a traiter')
     output_directory = os.path.join(os.path.dirname(__file__), './extracted_images')
 
     if not os.path.isdir(pdf_directory):

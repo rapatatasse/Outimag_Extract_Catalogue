@@ -6,7 +6,7 @@ suivre les instructions
 
 ### mettre a jour le dossier###
 
-clique droit dans dossier puis "git bash here"
+clique droit dans dossier / afficher plus d'option / puis "git bash here"
 
 dans le terminal taper "git pull"
 

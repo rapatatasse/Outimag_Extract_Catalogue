@@ -11,8 +11,8 @@ def rename_pdfs():
     # --- Configuration ---
     ean_csv_path = './ean_codes.csv'
     product_db_path = './FICHIER GENERAL.xlsx'
-    pdf_directory = './Fiche technique a traite'
-    pdf_directory_traiter = './Fiche technique traite'
+    pdf_directory = './A Fiches techniques a traiter'
+    pdf_directory_traiter = './B Fiches techniques traitees'
 
     # Column indices (0-based)
     product_name_col_index = 3  # Column 4 (D) for Product Name

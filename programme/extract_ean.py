@@ -57,7 +57,7 @@ def extract_ean_from_pdf(pdf_path):
 
 def main():
     """Main function to process all PDFs in a directory and write to a CSV."""
-    pdf_directory = os.path.join(os.path.dirname(__file__), '../Fiche technique a traite')
+    pdf_directory = os.path.join(os.path.dirname(__file__), '../A Fiches techniques a traiter')
     output_csv_path = os.path.join(os.path.dirname(__file__), '../ean_codes.csv')
 
     if not os.path.isdir(pdf_directory):
