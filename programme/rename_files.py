@@ -117,6 +117,10 @@ def rename_pdfs():
                     print(f"Warning: Original file '{original_filename}' no longer exists. Skipping remaining codes.")
                     continue
                 
+                # Préparer des listes pour stocker les informations de renommage
+                files_to_create = []
+                
+                # Analyser d'abord tous les codes sans renommer
                 for code_index, code in enumerate(codes):
                     try:
                         new_name_base = None
@@ -183,21 +187,13 @@ def rename_pdfs():
                                         new_path = f"{name_parts[0]}_{counter}{name_parts[1]}"
                                         counter += 1
                                     
-                                    if i == 0 and code_index == 0:
-                                        # Pour la première référence du premier code, renommer le fichier original
-                                        os.rename(current_source_path, new_path)
-                                        print(f"Renamed '{original_filename}' to '{os.path.basename(new_path)}'")
-                                        first_renamed_file = new_path  # Sauvegarde le chemin du premier fichier renommé
-                                        current_source_path = new_path  # Met à jour le chemin source actuel
-                                        successfully_renamed = True
-                                    else:
-                                        # Pour les autres références, copier à partir du fichier original/premier renommé
-                                        source_path = first_renamed_file if first_renamed_file is not None else original_path
-                                        if not os.path.exists(source_path):
-                                            print(f"Warning: Source file for copying no longer exists. Skipping.")
-                                            continue
-                                        shutil.copy2(source_path, new_path)
-                                        print(f"Created copy as '{os.path.basename(new_path)}' for ref {ref_data['product_name']}")
+                                    # Stocker les informations pour créer ce fichier plus tard
+                                    files_to_create.append({
+                                        'new_path': new_path,
+                                        'product_name': ref_data['product_name'],
+                                        'code': code
+                                    })
+                                    successfully_renamed = True
                             else:
                                 print(f"Code '{code}' from '{original_filename}': {lookup_type} not found in database.")
                         
@@ -241,6 +237,21 @@ def rename_pdfs():
                     except Exception as e:
                         print(f"Error processing code '{code}' from '{original_filename}': {e}")
                         continue  # Continue with next code
+                
+                # Après avoir analysé tous les codes, créer les fichiers si au moins un code a été trouvé
+                if files_to_create:
+                    # Créer le premier fichier en renommant l'original
+                    os.rename(original_path, files_to_create[0]['new_path'])
+                    print(f"Renamed '{original_filename}' to '{os.path.basename(files_to_create[0]['new_path'])}'")
+                    first_renamed_file = files_to_create[0]['new_path']
+                    
+                    # Créer les autres fichiers en copiant le premier
+                    for i, file_info in enumerate(files_to_create[1:], 1):
+                        shutil.copy2(first_renamed_file, file_info['new_path'])
+                        print(f"Created copy as '{os.path.basename(file_info['new_path'])}'")
+                else:
+                    print(f"No valid codes found for '{original_filename}'. File not renamed.")
+                
             except Exception as e:
                 print(f"Error processing file entry {index}: {e}")
                 continue  # Continue with next file
