@@ -5,7 +5,7 @@ $ScriptDir = $PSScriptRoot
 
 # --- Configuration ---
 $BaseProduitsFile = Join-Path $ScriptDir "FICHIER GENERAL.xlsx"
-$FicheTechniqueDir = Join-Path $ScriptDir "Fiche technique"
+$FicheTechniqueDir = Join-Path $ScriptDir "Fiche technique a traite"
 $ExtractEanScript = Join-Path $ScriptDir "programme/extract_ean.py"
 $RenameFilesScript = Join-Path $ScriptDir "programme/rename_files.py"
 $ExtractImagesScript = Join-Path $ScriptDir "programme/extract_images.py"
@@ -98,7 +98,7 @@ while ($true) {
     Write-Host "   Menu de Traitement des Fichiers PDF   " -ForegroundColor Cyan
     Write-Host "=========================================" -ForegroundColor Cyan
     Write-Host
-    Write-Host "1. Rechercher les codes EAN ou code produit fournisseur dans les fichiers PDF dans dossier Fiche technique" -ForegroundColor Yellow
+    Write-Host "1. Rechercher les codes EAN ou code produit fournisseur dans les fichiers PDF dans dossier Fiche technique a traite" -ForegroundColor Yellow
     Write-Host "2. Lancer le match du ean_codes.csv avec le FICHIER GENERAL.xlsx pour renommer les fichier PDF" -ForegroundColor Yellow
     Write-Host "(ne pas laisser ouvert le fichier ean_codes.csv)"
     Write-Host "3. Extraire les images des fichiers PDF" -ForegroundColor Yellow
