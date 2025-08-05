@@ -11,3 +11,8 @@ clique droit dans dossier / afficher plus d'option / puis "git bash here"
 dans le terminal taper "git pull"
 
 
+####A faire
+faire procedure pour installer powersell et lancer en temps qu'admin
+
+voir pourquoi artub ne marche pas entierement
+
