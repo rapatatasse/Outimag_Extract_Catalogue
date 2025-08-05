@@ -32,7 +32,7 @@ while ($true) {
     Write-Host "1. Rechercher les codes EAN ou code produit fournisseur dans les fichiers PDF dans dossier A Fiches techniques a traiter" -ForegroundColor Yellow
     Write-Host "2. Lancer le match du ean_codes.csv avec le FICHIER GENERAL.xlsx pour renommer les fichier PDF" -ForegroundColor Yellow
     Write-Host "(ne pas laisser ouvert le fichier ean_codes.csv)" -ForegroundColor Gray
-    Write-Host "3. Extraire les images des fichiers PDF" -ForegroundColor Yellow
+    Write-Host "3. Extraire les images des fichiers PDF" -ForegroundColor Blue
     Write-Host "4. Quitter" -ForegroundColor Yellow
     Write-Host
 

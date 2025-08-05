@@ -2,12 +2,17 @@ import os
 import pandas as pd
 import re
 import shutil
+import time
+import sys
+
+start_total = time.time()
 
 def sanitize_filename(filename):
     return re.sub(r'[\\/*?"<>|]', "", filename)
 
 def rename_pdfs():
     """Renames PDF files based on EAN codes and an Excel mapping file."""
+    start_total = time.time()
     # --- Configuration ---
     ean_csv_path = './ean_codes.csv'
     product_db_path = './FICHIER GENERAL.xlsx'
@@ -38,10 +43,13 @@ def rename_pdfs():
 
     try:
         # --- Load and Prepare Product Database ---
+        print(f"Chargement du fichier Excel '{product_db_path}'...")
+        start_excel = time.time()
         db_df = pd.read_excel(product_db_path, header=6, dtype=str)
-        print(f"Successfully loaded '{product_db_path}'.")
-
+        excel_time = time.time() - start_excel
+        print(f"Successfully loaded '{product_db_path}' en {excel_time:.2f} secondes.")
         # Get column names by index to avoid issues with header names
+        start_mapping = time.time()
         product_name_col = db_df.columns[product_name_col_index]
         ean_col = db_df.columns[ean_col_index]
         ref_fourn_col = db_df.columns[ref_fourn_col]
@@ -82,10 +90,15 @@ def rename_pdfs():
                 })
         
         print(f"Created mappings for {len(lma_code_to_refs)} LMA base codes with {sum(len(refs) for refs in lma_code_to_refs.values())} total products.")
+        
+        mapping_time = time.time() - start_mapping
+        print(f"Création des mappings terminée en {mapping_time:.2f} secondes.")
 
         # --- Read CSV and Process Files ---
+        start_csv = time.time()
         pdf_ean_df = pd.read_csv(ean_csv_path, sep=';', dtype=str)
-        print(f"\nProcessing {len(pdf_ean_df)} files from '{ean_csv_path}'.\n")
+        csv_time = time.time() - start_csv
+        print(f"\nCSV chargé en {csv_time:.2f} secondes. Processing {len(pdf_ean_df)} files from '{ean_csv_path}'.\n")
 
         for index, row in pdf_ean_df.iterrows():
             try:
@@ -112,15 +125,15 @@ def rename_pdfs():
                 first_renamed_file = None  # Pour stocker le premier fichier renommé
                 successfully_renamed = False  # Flag pour vérifier si au moins un fichier a été renommé
                 
+                # Initialiser le compteur de codes trouvés
+                nb_codes_trouves = 0
+                created_files = []  # Liste pour stocker les chemins des fichiers créés
+                
                 # S'assurer que le fichier original existe toujours
                 if not os.path.exists(original_path):
-                    print(f"Warning: Original file '{original_filename}' no longer exists. Skipping remaining codes.")
+                    print(f"Warning: Original file '{original_filename}' no longer exists. Skipping.")
                     continue
-                
-                # Préparer des listes pour stocker les informations de renommage
-                files_to_create = []
-                
-                # Analyser d'abord tous les codes sans renommer
+                    
                 for code_index, code in enumerate(codes):
                     try:
                         new_name_base = None
@@ -131,7 +144,6 @@ def rename_pdfs():
                             lookup_type = "6-digit AUTOBEST code"
                             
                             if new_name_base:
-                                matches_found = True
                                 sanitized_name = sanitize_filename(str(new_name_base))
                                 _, extension = os.path.splitext(original_filename)
                                 new_filename = f"{sanitized_name}{extension}"
@@ -146,20 +158,11 @@ def rename_pdfs():
                                     new_path = f"{name_parts[0]}_{counter}{name_parts[1]}"
                                     counter += 1
                                 
-                                if code_index == 0:
-                                    # Pour le premier code, renommer le fichier original
-                                    os.rename(current_source_path, new_path)
-                                    print(f"Renamed '{original_filename}' to '{os.path.basename(new_path)}'")
-                                    first_renamed_file = new_path  # Sauvegarde le chemin du premier fichier renommé
-                                    current_source_path = new_path  # Met à jour le chemin source actuel
-                                    successfully_renamed = True
-                                else:
-                                    # Pour les codes suivants, copier à partir du premier fichier renommé
-                                    if first_renamed_file is None:
-                                        print(f"Warning: Cannot create copy for code '{code}' as no file was successfully renamed yet.")
-                                        continue
-                                    shutil.copy2(first_renamed_file, new_path)
-                                    print(f"Created copy as '{os.path.basename(new_path)}'")
+                                # Copier le fichier original vers la nouvelle destination
+                                shutil.copy2(original_path, new_path)
+                                print(f"Created file for code '{code}' as '{os.path.basename(new_path)}'")
+                                created_files.append(new_path)
+                                nb_codes_trouves += 1
                             else:
                                 print(f"Code '{code}' from '{original_filename}': {lookup_type} not found in database.")
                             
@@ -169,7 +172,6 @@ def rename_pdfs():
                             matching_refs = lma_code_to_refs.get(code, [])
                             
                             if matching_refs:
-                                matches_found = True
                                 print(f"Found {len(matching_refs)} products for LMA base code {code}")
                                 
                                 # Pour chaque référence trouvée, créer un fichier
@@ -187,13 +189,11 @@ def rename_pdfs():
                                         new_path = f"{name_parts[0]}_{counter}{name_parts[1]}"
                                         counter += 1
                                     
-                                    # Stocker les informations pour créer ce fichier plus tard
-                                    files_to_create.append({
-                                        'new_path': new_path,
-                                        'product_name': ref_data['product_name'],
-                                        'code': code
-                                    })
-                                    successfully_renamed = True
+                                    # Copier le fichier original vers la nouvelle destination
+                                    shutil.copy2(original_path, new_path)
+                                    print(f"Created file for LMA product '{ref_data['product_name']}' as '{os.path.basename(new_path)}'")
+                                    created_files.append(new_path)
+                                    nb_codes_trouves += 1
                             else:
                                 print(f"Code '{code}' from '{original_filename}': {lookup_type} not found in database.")
                         
@@ -203,7 +203,6 @@ def rename_pdfs():
                             lookup_type = "13-digit EAN"
                             
                             if new_name_base:
-                                matches_found = True
                                 sanitized_name = sanitize_filename(str(new_name_base))
                                 _, extension = os.path.splitext(original_filename)
                                 new_filename = f"{sanitized_name}{extension}"
@@ -218,37 +217,22 @@ def rename_pdfs():
                                     new_path = f"{name_parts[0]}_{counter}{name_parts[1]}"
                                     counter += 1
                                 
-                                if code_index == 0:
-                                    # Pour le premier code, renommer le fichier original
-                                    os.rename(current_source_path, new_path)
-                                    print(f"Renamed '{original_filename}' to '{os.path.basename(new_path)}'")
-                                    first_renamed_file = new_path  # Sauvegarde le chemin du premier fichier renommé
-                                    current_source_path = new_path  # Met à jour le chemin source actuel
-                                    successfully_renamed = True
-                                else:
-                                    # Pour les codes suivants, copier à partir du premier fichier renommé
-                                    if first_renamed_file is None:
-                                        print(f"Warning: Cannot create copy for code '{code}' as no file was successfully renamed yet.")
-                                        continue
-                                    shutil.copy2(first_renamed_file, new_path)
-                                    print(f"Created copy as '{os.path.basename(new_path)}'")
+                                # Copier le fichier original vers la nouvelle destination
+                                shutil.copy2(original_path, new_path)
+                                print(f"Created file for code '{code}' as '{os.path.basename(new_path)}'")
+                                created_files.append(new_path)
+                                nb_codes_trouves += 1
                             else:
                                 print(f"Code '{code}' from '{original_filename}': {lookup_type} not found in database.")
                     except Exception as e:
                         print(f"Error processing code '{code}' from '{original_filename}': {e}")
                         continue  # Continue with next code
                 
-                # Après avoir analysé tous les codes, créer les fichiers si au moins un code a été trouvé
-                if files_to_create:
-                    # Créer le premier fichier en renommant l'original
-                    os.rename(original_path, files_to_create[0]['new_path'])
-                    print(f"Renamed '{original_filename}' to '{os.path.basename(files_to_create[0]['new_path'])}'")
-                    first_renamed_file = files_to_create[0]['new_path']
-                    
-                    # Créer les autres fichiers en copiant le premier
-                    for i, file_info in enumerate(files_to_create[1:], 1):
-                        shutil.copy2(first_renamed_file, file_info['new_path'])
-                        print(f"Created copy as '{os.path.basename(file_info['new_path'])}'")
+                # Après avoir traité tous les codes, supprimer l'original si au moins un fichier a été créé
+                if nb_codes_trouves > 0:
+                    # Supprimer le fichier original car au moins une copie a été créée
+                    os.remove(original_path)
+                    print(f"Fichier original '{original_filename}' supprimé après création de {nb_codes_trouves} fichier(s).")
                 else:
                     print(f"No valid codes found for '{original_filename}'. File not renamed.")
                 
@@ -265,4 +249,5 @@ def rename_pdfs():
 
 if __name__ == "__main__":
     rename_pdfs()
-    print("\nRenaming process complete.")
+    total_time = time.time() - start_total
+    print(f"\nRenaming process complete en {total_time:.2f} secondes.")
